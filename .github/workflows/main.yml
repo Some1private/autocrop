@@ -1,7 +1,12 @@
 name: Convert Video to TikTok Format
 
 on:
-  workflow_dispatch:  # Only manual trigger
+  workflow_dispatch:
+    inputs:
+      video_url:
+        description: 'URL of the MP4 video'
+        required: true
+        type: string
 
 jobs:
   convert-video:
@@ -13,29 +18,23 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Find MP4 file and set permissions
-        id: find-mp4
-        run: |
-          VIDEO_FILE=$(ls *.mp4 | head -n 1)
-          echo "video_file=$VIDEO_FILE" >> $GITHUB_OUTPUT
-          chmod 644 "$VIDEO_FILE"
-
-      - name: Create video directory
+      - name: Download video from URL
         run: |
           mkdir -p video_input
-          cp ${{ steps.find-mp4.outputs.video_file }} video_input/
-          chmod -R 755 video_input
+          wget -O video_input/input.mp4 "${{ github.event.inputs.video_url }}"
+          chmod 644 video_input/input.mp4
+          ls -l video_input/
 
       - name: Convert video using autoflip with development config
         run: |
           docker run --rm -v ${{ github.workspace }}/video_input:/video \
-            -e input_video=${{ steps.find-mp4.outputs.video_file }} \
+            -e input_video=input.mp4 \
             -e output_video=tiktok_version.mp4 \
             -e aspect_ratio=9:16 \
             -e config=development \
             -e frames_output=debug_frames.mp4 \
             -e points_output=debug_points.mp4 \
-            lathi/autoflip
+            lathi/autoflip:latest
 
       - name: Upload all debug videos
         uses: actions/upload-artifact@v4
