@@ -1,25 +1,15 @@
-FROM ubuntu:20.04
+FROM tensorflow/tensorflow:2.13.0
 
 ENV DEBIAN_FRONTEND=noninteractive
-ENV HERMETIC_PYTHON_VERSION=3.9
 
 # Install basic dependencies
 RUN apt-get update && apt-get install -y \
-    python3.9 \
-    python3.9-dev \
-    python3-pip \
     git \
     build-essential \
     pkg-config \
     cmake \
     wget \
-    libopencv-dev \
-    libopencv-core-dev \
-    libopencv-highgui-dev \
-    libopencv-calib3d-dev \
-    libopencv-features2d-dev \
-    libopencv-imgproc-dev \
-    libopencv-video-dev
+    libopencv-dev
 
 # Install Bazelisk
 RUN wget https://github.com/bazelbuild/bazelisk/releases/download/v1.25.0/bazelisk-amd64.deb \
@@ -30,10 +20,9 @@ RUN wget https://github.com/bazelbuild/bazelisk/releases/download/v1.25.0/bazeli
 RUN git clone https://github.com/google/mediapipe.git
 WORKDIR /mediapipe
 
-# Build AutoFlip with Python 3.9
+# Build AutoFlip
 RUN bazel build -c opt \
     --define MEDIAPIPE_DISABLE_GPU=1 \
-    --repo_env=HERMETIC_PYTHON_VERSION=3.9 \
     mediapipe/examples/desktop/autoflip:run_autoflip
 
 # Create working directory
