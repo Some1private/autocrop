@@ -15,8 +15,7 @@ RUN apt-get update && apt-get install -y \
     build-essential \
     pkg-config \
     cmake \
-    wget \
-    
+    wget
 
 # Set Python 3.9 as default and install numpy
 RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.9 1 && \
