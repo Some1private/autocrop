@@ -1,10 +1,7 @@
 name: Convert Video to TikTok Format
 
 on:
-  push:
-    paths:
-      - '*.mp4'
-  workflow_dispatch:
+  workflow_dispatch:  # Only manual trigger
 
 jobs:
   convert-video:
