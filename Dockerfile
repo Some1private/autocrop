@@ -26,6 +26,9 @@ RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.9 1 
 # Install OpenCV 3.4.18.65
 RUN python3.9 -m pip install opencv-python==3.4.18.65
 
+# Install OpenCV C++ development headers
+RUN apt-get update && apt-get install -y libopencv-dev
+
 # Install Bazelisk
 RUN wget https://github.com/bazelbuild/bazelisk/releases/download/v1.25.0/bazelisk-amd64.deb \
     && dpkg -i bazelisk-amd64.deb \
