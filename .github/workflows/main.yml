@@ -3,43 +3,48 @@ name: Convert Video to TikTok Format
 on:
   push:
     paths:
-      - '*.mp4'  # Trigger when MP4 files are pushed
-  workflow_dispatch:  # Allow manual trigger
+      - '*.mp4'
+  workflow_dispatch:
 
 jobs:
   convert-video:
     runs-on: ubuntu-latest
     permissions:
-      contents: write  # Needed for pushing changes
-    
+      contents: write
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Find MP4 file
+      - name: Find MP4 file and set permissions
         id: find-mp4
         run: |
           VIDEO_FILE=$(ls *.mp4 | head -n 1)
           echo "video_file=$VIDEO_FILE" >> $GITHUB_OUTPUT
+          chmod 644 "$VIDEO_FILE"
 
-      - name: Convert video using autoflip
+      - name: Create video directory
         run: |
-          docker run -v ${{ github.workspace }}:/video \
+          mkdir -p video_input
+          cp ${{ steps.find-mp4.outputs.video_file }} video_input/
+          chmod -R 755 video_input
+
+      - name: Convert video using autoflip with development config
+        run: |
+          docker run --rm -v ${{ github.workspace }}/video_input:/video \
             -e input_video=${{ steps.find-mp4.outputs.video_file }} \
             -e output_video=tiktok_version.mp4 \
             -e aspect_ratio=9:16 \
+            -e config=development \
+            -e frames_output=debug_frames.mp4 \
+            -e points_output=debug_points.mp4 \
             lathi/autoflip:latest
 
-      - name: Upload converted video
+      - name: Upload all debug videos
         uses: actions/upload-artifact@v4
         with:
-          name: tiktok-video
-          path: tiktok_version.mp4
-
-      - name: Commit and push converted video
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git add tiktok_version.mp4
-          git commit -m "Add converted TikTok video"
-          git push
+          name: debug-videos
+          path: |
+            video_input/tiktok_version.mp4
+            video_input/debug_frames.mp4
+            video_input/debug_points.mp4
