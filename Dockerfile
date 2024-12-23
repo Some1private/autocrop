@@ -35,7 +35,7 @@ RUN git clone https://github.com/google/mediapipe.git \
 
 WORKDIR /mediapipe
 
-# Build AutoFlip with optimizations
+# Build OpenCV and AutoFlip with optimizations
 RUN bazel build -c opt \
     --define MEDIAPIPE_DISABLE_GPU=1 \
     --action_env PYTHON_BIN_PATH=/usr/bin/python3.9 \
@@ -45,6 +45,7 @@ RUN bazel build -c opt \
     --copt=-mfma \
     --copt=-msse4.1 \
     --copt=-msse4.2 \
+    @org_opencv//:opencv \
     mediapipe/examples/desktop/autoflip:run_autoflip
 
 WORKDIR /workspace
