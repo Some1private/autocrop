@@ -35,7 +35,7 @@ jobs:
             -e config=development \
             -e frames_output=debug_frames.mp4 \
             -e points_output=debug_points.mp4 \
-            daniloleemes/autoflip
+            kendiyang401/autoflip
 
       - name: Upload all debug videos
         uses: actions/upload-artifact@v4
