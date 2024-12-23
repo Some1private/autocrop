@@ -2,16 +2,27 @@ FROM ubuntu:20.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install dependencies
+# Install basic dependencies
 RUN apt-get update && apt-get install -y \
     python3 \
     python3-pip \
     git \
-    bazel \
     build-essential \
-    opencv-python \
     pkg-config \
-    libopencv-dev=3.2.0
+    cmake \
+    wget \
+    libopencv-dev \
+    libopencv-core-dev \
+    libopencv-highgui-dev \
+    libopencv-calib3d-dev \
+    libopencv-features2d-dev \
+    libopencv-imgproc-dev \
+    libopencv-video-dev
+
+# Install Bazelisk
+RUN wget https://github.com/bazelbuild/bazelisk/releases/download/v1.25.0/bazelisk-amd64.deb \
+    && dpkg -i bazelisk-amd64.deb \
+    && rm bazelisk-amd64.deb
 
 # Clone MediaPipe
 RUN git clone https://github.com/google/mediapipe.git
