@@ -1,0 +1,56 @@
+name: AutoFlip Video Processing
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:  # Allows manual triggering
+
+jobs:
+  process-video:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        repository: google/mediapipe
+        fetch-depth: 1
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          libopencv-core-dev \
+          libopencv-highgui-dev \
+          libopencv-calib3d-dev \
+          libopencv-features2d-dev \
+          libopencv-imgproc-dev \
+          libopencv-video-dev \
+          libopencv-contrib-dev \
+          wget
+
+    - name: Install Bazelisk
+      run: |
+        wget https://github.com/bazelbuild/bazelisk/releases/download/v1.25.0/bazelisk-linux-amd64
+        chmod +x bazelisk-linux-amd64
+        sudo mv bazelisk-linux-amd64 /usr/local/bin/bazel
+
+    - name: Download input video
+      run: |
+        # Replace this URL with your video URL
+        wget -O input.mp4 YOUR_VIDEO_URL_HERE
+        
+    - name: Build AutoFlip
+      run: |
+        bazel build -c opt --define MEDIAPIPE_DISABLE_GPU=1 mediapipe/examples/desktop/autoflip:run_autoflip
+
+    - name: Run AutoFlip
+      run: |
+        GLOG_logtostderr=1 bazel-bin/mediapipe/examples/desktop/autoflip/run_autoflip \
+          --calculator_graph_config_file=mediapipe/examples/desktop/autoflip/autoflip_graph.pbtxt \
+          --input_side_packets=input_video_path=$(pwd)/input.mp4,output_video_path=$(pwd)/output.mp4,aspect_ratio=9:16
+
+    - name: Upload processed video
+      uses: actions/upload-artifact@v3
+      with:
+        name: processed-video
+        path: output.mp4
