@@ -1,56 +1,43 @@
-name: AutoFlip Video Processing
+name: Convert Video to TikTok Format
 
 on:
   push:
-    branches: [ main ]
-  workflow_dispatch:  # Allows manual triggering
+    paths:
+      - '*.mp4'  # Trigger when MP4 files are pushed
+  workflow_dispatch:  # Allow manual trigger
 
 jobs:
-  process-video:
+  convert-video:
     runs-on: ubuntu-latest
     
     steps:
-    - uses: actions/checkout@v3
-      with:
-        repository: google/mediapipe
-        fetch-depth: 1
+      - name: Checkout repository
+        uses: actions/checkout@v2
 
-    - name: Install dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y \
-          libopencv-core-dev \
-          libopencv-highgui-dev \
-          libopencv-calib3d-dev \
-          libopencv-features2d-dev \
-          libopencv-imgproc-dev \
-          libopencv-video-dev \
-          libopencv-contrib-dev \
-          wget
+      - name: Find MP4 file
+        id: find-mp4
+        run: |
+          VIDEO_FILE=$(ls *.mp4 | head -n 1)
+          echo "video_file=$VIDEO_FILE" >> $GITHUB_OUTPUT
 
-    - name: Install Bazelisk
-      run: |
-        wget https://github.com/bazelbuild/bazelisk/releases/download/v1.25.0/bazelisk-linux-amd64
-        chmod +x bazelisk-linux-amd64
-        sudo mv bazelisk-linux-amd64 /usr/local/bin/bazel
+      - name: Convert video using autoflip
+        run: |
+          docker run -v ${{ github.workspace }}:/video \
+            -e input_video=${{ steps.find-mp4.outputs.video_file }} \
+            -e output_video=tiktok_version.mp4 \
+            -e aspect_ratio=9:16 \
+            lathi/autoflip:latest
 
-    - name: Download input video
-      run: |
-        # Replace this URL with your video URL
-        wget -O input.mp4 YOUR_VIDEO_URL_HERE
-        
-    - name: Build AutoFlip
-      run: |
-        bazel build -c opt --define MEDIAPIPE_DISABLE_GPU=1 mediapipe/examples/desktop/autoflip:run_autoflip
+      - name: Upload converted video
+        uses: actions/upload-artifact@v2
+        with:
+          name: tiktok-video
+          path: tiktok_version.mp4
 
-    - name: Run AutoFlip
-      run: |
-        GLOG_logtostderr=1 bazel-bin/mediapipe/examples/desktop/autoflip/run_autoflip \
-          --calculator_graph_config_file=mediapipe/examples/desktop/autoflip/autoflip_graph.pbtxt \
-          --input_side_packets=input_video_path=$(pwd)/input.mp4,output_video_path=$(pwd)/output.mp4,aspect_ratio=9:16
-
-    - name: Upload processed video
-      uses: actions/upload-artifact@v3
-      with:
-        name: processed-video
-        path: output.mp4
+      - name: Commit and push converted video
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add tiktok_version.mp4
+          git commit -m "Add converted TikTok video"
+          git push
