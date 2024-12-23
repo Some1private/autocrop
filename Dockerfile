@@ -23,6 +23,9 @@ RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.9 1 
     python3.9 -m pip install --upgrade pip && \
     python3.9 -m pip install numpy
 
+# Install OpenCV 3.4.18.65
+RUN python3.9 -m pip install opencv-python==3.4.18.65
+
 # Install Bazelisk
 RUN wget https://github.com/bazelbuild/bazelisk/releases/download/v1.25.0/bazelisk-amd64.deb \
     && dpkg -i bazelisk-amd64.deb \
@@ -45,7 +48,6 @@ RUN bazel build -c opt \
     --copt=-mfma \
     --copt=-msse4.1 \
     --copt=-msse4.2 \
-    @org_opencv//:opencv \
     mediapipe/examples/desktop/autoflip:run_autoflip
 
 WORKDIR /workspace
