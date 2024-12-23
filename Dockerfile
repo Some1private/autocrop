@@ -10,6 +10,7 @@ RUN apt-get update && apt-get install -y \
     python3.9 \
     python3.9-dev \
     python3-pip \
+    python3.9-venv \
     git \
     build-essential \
     pkg-config \
@@ -23,8 +24,11 @@ RUN apt-get update && apt-get install -y \
     libopencv-imgproc-dev \
     libopencv-video-dev
 
-# Set Python 3.9 as default
-RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.9 1
+# Set Python 3.9 as default and install numpy
+RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.9 1 && \
+    update-alternatives --install /usr/bin/python python /usr/bin/python3.9 1 && \
+    python3.9 -m pip install --upgrade pip && \
+    python3.9 -m pip install numpy
 
 # Install Bazelisk
 RUN wget https://github.com/bazelbuild/bazelisk/releases/download/v1.25.0/bazelisk-amd64.deb \
