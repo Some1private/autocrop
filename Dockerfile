@@ -16,13 +16,7 @@ RUN apt-get update && apt-get install -y \
     pkg-config \
     cmake \
     wget \
-    libopencv-dev \
-    libopencv-core-dev \
-    libopencv-highgui-dev \
-    libopencv-calib3d-dev \
-    libopencv-features2d-dev \
-    libopencv-imgproc-dev \
-    libopencv-video-dev
+    
 
 # Set Python 3.9 as default and install numpy
 RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.9 1 && \
