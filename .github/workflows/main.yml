@@ -18,6 +18,36 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Create custom config
+        run: |
+          cat > custom_config.pbtxt << 'EOL'
+          max_queue_size: -1
+          input_side_packet: "INPUT_FILE_PATH:input_video_path"
+          input_side_packet: "OUTPUT_FILE_PATH:output_video_path"
+          input_side_packet: "ASPECT_RATIO:aspect_ratio"
+          node {
+            calculator: "SceneCroppingCalculator"
+            options: {
+              [mediapipe.autoflip.SceneCroppingCalculatorOptions.ext]: {
+                max_scene_size: 600
+                key_frame_crop_options: {
+                  score_aggregation_type: CONSTANT
+                }
+                scene_camera_motion_analyzer_options: {
+                  motion_stabilization_threshold_percent: 0.8  # More stable
+                  salient_point_bound: 0.3  # More conservative
+                }
+                padding_parameters: {
+                  blur_cv_size: 100
+                  overlay_opacity: 0.7
+                }
+                target_size_type: MAXIMIZE_TARGET_DIMENSION
+                video_resolution_factor: 0.5  # Lower resolution processing
+              }
+            }
+          }
+          EOL
+
       - name: Download video from URL
         run: |
           mkdir -p video_input
@@ -25,22 +55,19 @@ jobs:
           chmod 644 video_input/input.mp4
           ls -l video_input/
 
-      - name: Convert video using autoflip with development config
+      - name: Convert video using autoflip with custom config
         run: |
-          docker run --rm -v ${{ github.workspace }}/video_input:/video \
+          docker run --rm \
+            -v ${{ github.workspace }}/video_input:/video \
+            -v ${{ github.workspace }}/custom_config.pbtxt:/config.pbtxt \
             -e input_video=input.mp4 \
             -e output_video=tiktok_version.mp4 \
             -e aspect_ratio=9:16 \
-            -e config=development \
-            -e frames_output=debug_frames.mp4 \
-            -e points_output=debug_points.mp4 \
+            -e config=/config.pbtxt \
             lathi/autoflip:latest
 
-      - name: Upload all debug videos
+      - name: Upload converted video
         uses: actions/upload-artifact@v4
         with:
-          name: debug-videos
-          path: |
-            video_input/tiktok_version.mp4
-            video_input/debug_frames.mp4
-            video_input/debug_points.mp4
+          name: converted-video
+          path: video_input/tiktok_version.mp4
