@@ -9,10 +9,12 @@ on:
 jobs:
   convert-video:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Needed for pushing changes
     
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Find MP4 file
         id: find-mp4
@@ -29,7 +31,7 @@ jobs:
             lathi/autoflip:latest
 
       - name: Upload converted video
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: tiktok-video
           path: tiktok_version.mp4
