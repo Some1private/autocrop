@@ -1,10 +1,12 @@
 FROM ubuntu:20.04
 
 ENV DEBIAN_FRONTEND=noninteractive
+ENV HERMETIC_PYTHON_VERSION=3.9
 
 # Install basic dependencies
 RUN apt-get update && apt-get install -y \
-    python3 \
+    python3.9 \
+    python3.9-dev \
     python3-pip \
     git \
     build-essential \
@@ -28,8 +30,11 @@ RUN wget https://github.com/bazelbuild/bazelisk/releases/download/v1.25.0/bazeli
 RUN git clone https://github.com/google/mediapipe.git
 WORKDIR /mediapipe
 
-# Build AutoFlip
-RUN bazel build -c opt --define MEDIAPIPE_DISABLE_GPU=1 mediapipe/examples/desktop/autoflip:run_autoflip
+# Build AutoFlip with Python 3.9
+RUN bazel build -c opt \
+    --define MEDIAPIPE_DISABLE_GPU=1 \
+    --repo_env=HERMETIC_PYTHON_VERSION=3.9 \
+    mediapipe/examples/desktop/autoflip:run_autoflip
 
 # Create working directory
 WORKDIR /workspace
