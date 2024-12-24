@@ -1,32 +1,44 @@
-name: Build and Publish AutoFlip Docker Image
+name: Convert Video to TikTok Format
 
 on:
-  push:
-    branches: [ main ]
-  workflow_dispatch:
+  workflow_dispatch:  # Only manual trigger
 
 jobs:
-  build-and-push:
+  convert-video:
     runs-on: ubuntu-latest
-    
+    permissions:
+      contents: write
+
     steps:
-    - uses: actions/checkout@v2
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v1
-
-    - name: Login to DockerHub
-      uses: docker/login-action@v1
-      with:
-        username: ${{ secrets.DOCKER_USERNAME }}
-        password: ${{ secrets.DOCKER_PASSWORD }}
-
-    - name: Build and push
-      uses: docker/build-push-action@v2
-      with:
-        push: true
-        tags: ${{ secrets.DOCKER_USERNAME }}/autoflip:latest
-        platforms: linux/amd64
-        context: .
-        cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/autoflip:buildcache
-        cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/autoflip:buildcache,mode=max
+      - name: Find MP4 file and set permissions
+        id: find-mp4
+        run: |
+          VIDEO_FILE=$(ls *.mp4 | head -n 1)
+          echo "video_file=$VIDEO_FILE" >> $GITHUB_OUTPUT
+          chmod 644 "$VIDEO_FILE"
+      - name: Create video directory
+        run: |
+          mkdir -p video_input
+          cp ${{ steps.find-mp4.outputs.video_file }} video_input/
+          chmod -R 755 video_input
+      - name: Convert video using autoflip with development config
+        run: |
+          docker run --rm -v ${{ github.workspace }}/video_input:/video \
+            -e input_video=${{ steps.find-mp4.outputs.video_file }} \
+            -e output_video=tiktok_version.mp4 \
+            -e aspect_ratio=9:16 \
+            -e config=development \
+            -e frames_output=debug_frames.mp4 \
+            -e points_output=debug_points.mp4 \
+            lathi/autoflip
+      - name: Upload all debug videos
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-videos
+          path: |
+            video_input/tiktok_version.mp4
+            video_input/debug_frames.mp4
+            video_input/debug_points.mp4
